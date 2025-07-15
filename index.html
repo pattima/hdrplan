@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบตรวจสอบงบประมาณ - โรงเรียนหางดงรัฐราษฎร์อุปถัมภ์</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Updated font to Sarabun -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+        // Tailwind CSS configuration for custom colors and fonts
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF6B6B', // Main accent color (reddish)
+                        secondary: '#FFD0D0', // Lighter accent color
+                        light: '#FFF5F5', // Very light background color
+                    },
+                    fontFamily: {
+                        // Changed font family to Sarabun
+                        sarabun: ['Sarabun', 'sans-serif'], // Custom font family
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base styles for the body using the Sarabun font and light background */
+        body {
+            font-family: 'Sarabun', sans-serif; /* Changed font to Sarabun */
+            background-color: #FFF5F5;
+        }
+        /* Card transition for hover effect */
+        .card {
+            transition: all 0.3s ease;
+        }
+        /* Card hover effect: lift and add shadow */
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.2);
+        }
+        /* Table container for horizontal scrolling on smaller screens */
+        .table-container {
+            overflow-x: auto;
+        }
+        /* Table base styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        /* Table header and data cell padding and alignment */
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #FFD0D0; /* Light border for rows */
+        }
+        /* Table header specific styles: background, text color, sticky position */
+        th {
+            background-color: #FF6B6B; /* Primary color for headers */
+            color: white; /* White text for headers */
+            position: sticky; /* Make headers sticky when scrolling */
+            top: 0; /* Stick to the top */
+        }
+        /* Alternate row background color for better readability */
+        tr:nth-child(even) {
+            background-color: #FFF5F5;
+        }
+        /* Row hover effect */
+        tr:hover {
+            background-color: #FFE8E8;
+        }
+        /* Style for approved status text (icon version) */
+        .approved-icon {
+            color: #22c55e; /* Green color for checkmark */
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        /* Style for not-approved status text (icon version) */
+        .not-approved-icon {
+            color: #ef4444; /* Red color for cross */
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        /* Search input field styling */
+        .search-input {
+            border: 2px solid #FFD0D0; /* Light red border */
+            border-radius: 20px; /* Rounded corners */
+            padding: 8px 16px;
+            width: 100%;
+            transition: all 0.3s ease; /* Smooth transition for focus effect */
+        }
+        /* Search input focus effect: outline, border color, shadow */
+        .search-input:focus {
+            outline: none;
+            border-color: #FF6B6B; /* Primary color on focus */
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+        }
+        /* Button common styles with transition */
+        .btn {
+            transition: all 0.3s ease;
+        }
+        /* Button hover effect: slight lift and shadow */
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(255, 107, 107, 0.1);
+        }
+        /* Loader animation styles */
+        .loader {
+            border: 4px solid #f3f3f3; /* Light grey border */
+            border-top: 4px solid #FF6B6B; /* Primary color for spinning part */
+            border-radius: 50%; /* Make it circular */
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite; /* Spin animation */
+            margin: 20px auto; /* Center the loader */
+        }
+        /* Keyframes for the spin animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Error message styling */
+        .error-message {
+            background-color: #FFEBEE; /* Light red background */
+            border: 1px solid #FFCDD2; /* Red border */
+            color: #B71C1C; /* Dark red text */
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        /* Debug information styling (monospaced font, light background) */
+        .debug-info {
+            font-family: monospace;
+            font-size: 12px;
+            background-color: #f1f1f1;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+            white-space: pre-wrap; /* Preserve whitespace and wrap text */
+            overflow-x: auto; /* Allow horizontal scrolling if content overflows */
+        }
+        /* Filter badge styling */
+        .filter-badge {
+            background-color: '#FFD0D0'; /* Secondary color background */
+            color: '#FF6B6B'; /* Primary color text */
+            padding: 4px 12px;
+            border-radius: 20px; /* Highly rounded corners */
+            font-size: 14px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            display: inline-flex; /* Align items horizontally */
+            align-items: center;
+            cursor: pointer; /* Indicate clickable */
+            transition: all 0.2s ease; /* Smooth transition for hover */
+        }
+        /* Filter badge hover effect */
+        .filter-badge:hover {
+            background-color: '#FF6B6B'; /* Primary color on hover */
+            color: white; /* White text on hover */
+        }
+        /* Active filter badge styling */
+        .filter-badge.active {
+            background-color: '#FF6B6B'; /* Primary color when active */
+            color: white; /* White text when active */
+            border-color: '#FF6B6B'; /* Primary color border when active */
+            box-shadow: 0 4px 6px rgba(255, 107, 107, 0.2);
+        }
+        /* Select dropdown container for custom arrow styling */
+        .select-container {
+            position: relative;
+        }
+        /* Hide default select arrow */
+        .select-container select {
+            appearance: none; /* Remove default styling */
+            padding-right: 30px; /* Space for custom arrow */
+        }
+        /* Custom select arrow using pseudo-element */
+        .select-container::after {
+            content: "▼"; /* Unicode for down arrow */
+            font-size: 12px;
+            color: '#FF6B6B'; /* Primary color for arrow */
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%); /* Center vertically */
+            pointer-events: none; /* Allow clicks to pass through to the select */
+        }
+        /* Styling for navigation tabs */
+        .tab-btn {
+            padding: 10px 20px;
+            border-radius: 9999px; /* Fully rounded */
+            font-weight: 500;
+            color: '#FF6B6B'; /* Primary text color */
+            background-color: '#FFF5F5'; /* Light background */
+            border: 2px solid transparent; /* Transparent border by default */
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0; /* Prevent shrinking */
+            white-space: nowrap; /* Prevent wrapping text */
+        }
+        .tab-btn:hover {
+            background-color: '#FFD0D0'; /* Secondary color on hover */
+            color: '#FF6B6B'; /* Maintain primary text color */
+        }
+        .tab-btn.active-tab {
+            /* Enhanced styles for active tab */
+            background-color: #FF6B6B; /* Primary color when active */
+            color: white; /* White text when active */
+            border-color: #FF6B6B; /* Primary color border when active */
+            box-shadow: 0 6px 12px rgba(255, 107, 107, 0.4); /* Stronger shadow */
+            transform: translateY(-3px); /* Slightly lift the active tab */
+        }
+
+        /* Progress bar styling */
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 25px; /* Height of the progress bar */
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #22c55e; /* Green for progress */
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            line-height: 25px; /* Vertically center text */
+            transition: width 0.5s ease-in-out;
+        }
+
+        /* Styles for role selection buttons */
+        .role-selection-btn {
+            background-color: #FF6B6B; /* Corrected to direct hex */
+            color: #FFFFFF; /* Changed to white */
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 800; /* Already 800 for bolder text */
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(255, 107, 107, 0.2);
+        }
+
+        .role-selection-btn:hover {
+            background-color: #e05e5e; /* Corrected to direct hex */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(255, 107, 107, 0.3);
+        }
+
+        /* Active state for role selection buttons (when clicked) */
+        .role-selection-btn:active {
+            background-color: #FF6B6B; /* Primary color (red) when active/pressed */
+            transform: translateY(-1px); /* Slightly less lift to simulate press */
+            box-shadow: 0 2px 4px rgba(255, 107, 107, 0.4); /* More subtle shadow when pressed */
+        }
+
+        /* New styles for remaining budget display */
+        .budget-positive {
+            color: #22c55e; /* Green */
+            font-weight: bold;
+        }
+
+        .budget-negative {
+            color: #ef4444; /* Red */
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-light min-h-screen">
+    <div id="app" class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Header Section -->
+        <header class="flex flex-col md:flex-row items-center justify-between mb-4 bg-white rounded-xl p-4 shadow-md">
+            <div class="flex items-center mb-4 md:mb-0">
+                <!-- School Logo -->
+                <img src="https://img2.imgbiz.com/imgbiz/images525f26dacc70d0c1.jpg" alt="" class="h-[120px] mr-4">
+                <div>
+                    <!-- Main Title -->
+                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">ระบบตรวจสอบงบประมาณในโครงการ</h1>
+                    <!-- Subtitle -->
+                    <h2 class="text-lg md:text-xl text-primary font-medium">โรงเรียนหางดงรัฐราษฎร์อุปถัมภ์</h2>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="mb-6 bg-white rounded-xl p-3 shadow-md flex flex-wrap justify-center gap-4">
+            <button id="nav-dashboard" onclick="showDashboard()" class="tab-btn">แดชบอร์ด</button>
+            <button id="nav-budget-request" onclick="showBudgetRequest()" class="tab-btn">รายการขอใช้งบประมาณ</button>
+            <button id="nav-remaining-budget" onclick="showRemainingBudget()" class="tab-btn">เงินคงเหลือ</button>
+            <button id="nav-activity-summary" onclick="showActivitySummary()" class="tab-btn">สรุปกิจกรรม</button>
+            <button id="nav-admin" onclick="showAdminPage()" class="tab-btn">ผู้ดูแลระบบ</button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main>
+            <!-- Dashboard Page -->
+            <div id="dashboard-page">
+                <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">📊</span> ภาพรวมงบประมาณ
+                    </h2>
+                    
+                    <div id="dashboard-loading" class="loader"></div>
+                    <div id="dashboard-error" class="error-message hidden"></div>
+
+                    <div id="dashboard-content" class="hidden">
+                        <!-- Dashboard Filters -->
+                        <div id="dashboard-filters" class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="dashboard-department-filter" class="block text-gray-700 mb-2">กรองตามกลุ่มงาน</label>
+                                <div class="select-container">
+                                    <select id="dashboard-department-filter" class="border border-secondary rounded-md px-3 py-2 w-full" onchange="filterDashboardData()">
+                                        <option value="all">ทั้งหมด</option>
+                                        <!-- Options hardcoded based on user's request -->
+                                        <option value="วิชาการ">วิชาการ</option>
+                                        <option value="กิจการนักเรียน">กิจการนักเรียน</option>
+                                        <option value="บริหารทั่วไป">บริหารทั่วไป</option>
+                                        <option value="ธุรการ">ธุรการ</option>
+                                        <option value="บุคคล">บุคคล</option>
+                                        <option value="งบประมาณ">งบประมาณ</option>
+                                        <option value="แผนงาน">แผนงาน</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="dashboard-active-filters" class="mb-4 flex flex-wrap items-end"></div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Dynamic Budget Cards -->
+                            <div class="bg-blue-50 p-6 rounded-xl shadow-sm border border-blue-200">
+                                <h3 id="card-title-1" class="text-lg font-medium text-blue-800 mb-2">งบประมาณจัดสรรทั้งหมด</h3>
+                                <p id="card-value-1" class="text-3xl font-bold text-blue-600">0.00 ฿</p>
+                            </div>
+
+                            <div class="bg-green-50 p-6 rounded-xl shadow-sm border border-green-200">
+                                <h3 id="card-title-2" class="text-lg font-medium text-green-800 mb-2">งบประมาณที่ใช้ไป</h3>
+                                <p id="card-value-2" class="text-3xl font-bold text-green-600">0.00 ฿</p>
+                            </div>
+
+                            <div class="bg-red-50 p-6 rounded-xl shadow-sm border border-red-200">
+                                <h3 id="card-title-3" class="text-lg font-medium text-red-800 mb-2">งบประมาณคงเหลือ</h3>
+                                <p id="card-value-3" class="text-3xl font-bold text-red-600">0.00 ฿</p>
+                            </div>
+
+                            <!-- Progress Bar Section -->
+                            <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                                <h3 id="progress-bar-title" class="text-lg font-semibold text-gray-800 mb-4">ความก้าวหน้าการใช้งบประมาณ</h3>
+                                <div class="progress-bar-container">
+                                    <div id="budget-progress-bar" class="progress-bar" style="width: 0%;">0%</div>
+                                </div>
+                                <p id="progress-bar-description" class="text-sm text-gray-500 mt-2">แสดงเปอร์เซ็นต์ของงบประมาณที่ใช้ไปเทียบกับงบประมาณที่จัดสรร</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Budget Request Page -->
+            <div id="budget-request-page" class="hidden">
+                <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">📋</span> รายการขอใช้งบประมาณ
+                    </h2>
+                    
+                    <!-- Filters Section -->
+                    <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Department Filter Dropdown -->
+                        <div>
+                            <label for="department-filter" class="block text-gray-700 mb-2">กลุ่มงาน</label>
+                            <div class="select-container">
+                                <select id="department-filter" class="border border-secondary rounded-md px-3 py-2 w-full" onchange="filterBudgetRequestData()">
+                                    <option value="all">ทั้งหมด</option>
+                                    <!-- Options will be populated dynamically by JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Responsible Person Filter Input with Search Button -->
+                        <div>
+                            <label for="responsible-person-filter" class="block text-gray-700 mb-2">ค้นหาตามผู้รับผิดชอบ</label>
+                            <div class="flex">
+                                <input type="text" id="responsible-person-filter" class="search-input flex-grow" placeholder="พิมพ์ชื่อผู้รับผิดชอบ...">
+                                <button onclick="filterBudgetRequestData()" class="ml-2 bg-primary hover:bg-red-500 text-white font-medium py-2 px-6 rounded-full btn">
+                                    ค้นหา
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Active Filters Display -->
+                    <div id="active-filters" class="mb-4 flex flex-wrap"></div>
+                    
+                    <!-- Error Message Display -->
+                    <div id="budget-request-error" class="error-message hidden"></div>
+                    <!-- Loading Indicator -->
+                    <div id="budget-request-loading" class="loader"></div>
+                    
+                    <!-- Budget Request Table -->
+                    <div class="table-container">
+                        <table id="budget-request-table" class="w-full">
+                            <thead>
+                                <tr>
+                                    <th>วันที่</th>
+                                    <th>รหัสเอกสาร</th>
+                                    <th>กลุ่มงาน</th>
+                                    <th>กิจกรรม</th>
+                                    <th>รายละเอียด</th>
+                                    <th>จำนวนเงิน</th>
+                                    <th>ผู้รับผิดชอบ</th>
+                                    <th>รองผอ.อนุมัติ</th>
+                                    <th>ผอ.อนุมัติ</th>
+                                    <th>เอกสารแนบ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="budget-request-data">
+                                <!-- Table rows will be populated by JavaScript -->
+                                <tr>
+                                    <td colspan="10" class="text-center py-4">กำลังโหลดข้อมูล...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    <div class="flex justify-between items-center mt-6">
+                        <button id="prev-page-btn" onclick="goToPreviousPage()" class="bg-primary hover:bg-red-500 text-white font-medium py-2 px-4 rounded-full btn" disabled>
+                            ก่อนหน้า
+                        </button>
+                        <span class="text-gray-700">หน้า <span id="current-page">1</span> จาก <span id="total-pages">1</span></span>
+                        <button id="next-page-btn" onclick="goToNextPage()" class="bg-primary hover:bg-red-500 text-white font-medium py-2 px-4 rounded-full btn">
+                            ถัดไป
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Remaining Budget Page - Hidden by default -->
+            <div id="remaining-budget-page" class="hidden">
+                <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">💵</span> เงินคงเหลือ
+                    </h2>
+                    <!-- Search Input for Responsible Person -->
+                    <div class="mb-4">
+                        <label for="responsible-person" class="block text-gray-700 mb-2">ค้นหาตามผู้รับผิดชอบ</label>
+                        <div class="flex">
+                            <input type="text" id="responsible-person" class="search-input" placeholder="พิมพ์ชื่อผู้รับผิดชอบ...">
+                            <button onclick="searchResponsiblePerson()" class="ml-2 bg-primary hover:bg-red-500 text-white font-medium py-2 px-6 rounded-full btn">
+                                ค้นหา
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Error Message Display -->
+                    <div id="remaining-budget-error" class="error-message hidden"></div>
+                    <!-- Loading Indicator -->
+                    <div id="remaining-budget-loading" class="loader hidden"></div>
+                    
+                    <!-- Remaining Budget Table -->
+                    <div class="table-container">
+                        <table id="remaining-budget-table" class="w-full">
+                            <thead>
+                                <tr>
+                                    <th>กิจกรรม</th>
+                                    <th>ผู้รับผิดชอบ</th>
+                                    <th>แหล่งงบประมาณ</th>
+                                    <th>เงินจัดสรร</th>
+                                    <th>ใช้ไป</th>
+                                    <th>เงินคงเหลือ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="remaining-budget-data">
+                                <!-- Table rows will be populated by JavaScript -->
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">กรุณาค้นหาผู้รับผิดชอบ</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Summary Page - New section, hidden by default -->
+            <div id="activity-summary-page" class="hidden">
+                <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">📊</span> สรุปกิจกรรม
+                    </h2>
+                    <p class="text-gray-600">หน้านี้จะแสดงสรุปกิจกรรมและข้อมูลเชิงลึกในอนาคต</p>
+                    <!-- Placeholder for future summary content, e.g., charts, key metrics -->
+                </div>
+            </div>
+
+            <!-- Admin Page -->
+            <div id="admin-page" class="hidden">
+                <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">🔑</span> ผู้ดูแลระบบ
+                    </h2>
+
+                    <!-- Admin Role Selection -->
+                    <div id="admin-role-selection" class="flex flex-col md:flex-row gap-6 justify-center p-4">
+                        <button onclick="showLoginForRole('deputy')" class="role-selection-btn">
+                            เข้าสู่ระบบ (รองผู้อำนวยการ)
+                        </button>
+                        <button onclick="showLoginForRole('director')" class="role-selection-btn">
+                            เข้าสู่ระบบ (ผู้อำนวยการ)
+                        </button>
+                    </div>
+
+                    <!-- Deputy Director Login Section -->
+                    <div id="deputy-director-login-section" class="hidden mb-6 p-4 border border-secondary rounded-lg">
+                        <p class="text-gray-700 mb-3">กรุณากรอกรหัสผ่านของรองผู้อำนวยการ:</p>
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <input type="password" id="deputy-director-password-input" class="search-input flex-grow" placeholder="รหัสผ่านรองผู้อำนวยการ">
+                            <button onclick="loginDeputyDirector()" class="bg-primary hover:bg-red-500 text-white font-medium py-2 px-6 rounded-full btn">
+                                เข้าสู่ระบบ
+                            </button>
+                        </div>
+                        <p id="deputy-director-password-error" class="text-red-500 mt-2 hidden">รหัสผ่านไม่ถูกต้อง</p>
+                    </div>
+
+                    <!-- Director Login Section -->
+                    <div id="director-login-section" class="hidden mb-6 p-4 border border-secondary rounded-lg">
+                        <p class="text-gray-700 mb-3">กรุณากรอกรหัสผ่านของผู้อำนวยการ:</p>
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <input type="password" id="director-password-input" class="search-input flex-grow" placeholder="รหัสผ่านผู้อำนวยการ">
+                            <button onclick="loginDirector()" class="bg-primary hover:bg-red-500 text-white font-medium py-2 px-6 rounded-full btn">
+                                เข้าสู่ระบบ
+                            </button>
+                        </div>
+                        <p id="director-password-error" class="text-red-500 mt-2 hidden">รหัสผ่านไม่ถูกต้อง</p>
+                    </div>
+
+                    <!-- Deputy Director Approval Section -->
+                    <div id="deputy-director-approval-section" class="hidden bg-white p-6 rounded-xl shadow-md mb-6 border border-blue-200">
+                        <h3 class="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+                            <span class="mr-2">✅</span> รองผู้อำนวยการอนุมัติ
+                        </h3>
+                        <div id="deputy-director-loading" class="loader"></div>
+                        <div id="deputy-director-error" class="error-message hidden"></div>
+                        <div class="table-container">
+                            <table id="deputy-director-table" class="w-full">
+                                <thead>
+                                    <tr>
+                                        <th>วันที่</th>
+                                        <th>รหัสเอกสาร</th>
+                                        <th>กลุ่มงาน</th>
+                                        <th>กิจกรรม</th>
+                                        <th>จำนวนเงิน</th>
+                                        <th>ผู้รับผิดชอบ</th>
+                                        <th>ดำเนินการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deputy-director-data">
+                                    <tr><td colspan="7" class="text-center py-4">กำลังโหลดข้อมูล...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Director Approval Section -->
+                    <div id="director-approval-section" class="hidden bg-white p-6 rounded-xl shadow-md border border-green-200">
+                        <h3 class="text-lg font-semibold text-green-800 mb-4 flex items-center">
+                            <span class="mr-2">✅</span> ผู้อำนวยการอนุมัติ
+                        </h3>
+                        <div id="director-loading" class="loader"></div>
+                        <div id="director-error" class="error-message hidden"></div>
+                        <div class="table-container">
+                            <table id="director-table" class="w-full">
+                                <thead>
+                                    <tr>
+                                        <th>วันที่</th>
+                                        <th>รหัสเอกสาร</th>
+                                        <th>กลุ่มงาน</th>
+                                        <th>กิจกรรม</th>
+                                        <th>จำนวนเงิน</th>
+                                        <th>ผู้รับผิดชอบ</th>
+                                        <th>ดำเนินการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="director-data">
+                                    <tr><td colspan="7" class="text-center py-4">กำลังโหลดข้อมูล...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer Section -->
+        <footer class="mt-12 text-center text-gray-600 p-4 border-t border-secondary">
+            <p>@2025 งานแผนงานโรงเรียน</p>
+            <p class="text-primary">Developer :: ภัตติมา วงค์สุวรรณ์</p>
+        </footer>
+
+        <!-- Hidden file input for uploads -->
+        <input type="file" id="file-upload-input" style="display: none;">
+
+        <!-- Activity Details Modal (New) -->
+        <div id="activity-details-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold text-gray-800">รายละเอียดการขอใช้งบประมาณสำหรับกิจกรรม: <span id="detail-activity-name" class="text-primary"></span></h3>
+                    <button onclick="hideActivityDetails()" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+                </div>
+                <div class="table-container">
+                    <table id="activity-details-table" class="w-full">
+                        <thead>
+                            <tr>
+                                <th>วันที่</th>
+                                <th>รหัสเอกสาร</th>
+                                <th>กลุ่มงาน</th>
+                                <th>กิจกรรม</th>
+                                <th>รายละเอียด</th>
+                                <th>จำนวนเงิน</th>
+                                <th>ผู้รับผิดชอบ</th>
+                                <th>รองผอ.อนุมัติ</th>
+                                <th>ผอ.อนุมัติ</th>
+                                <th>เอกสารแนบ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-details-data">
+                            <!-- Details will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API URL for your Google Apps Script deployment
+        // IMPORTANT: Replace this with your actual deployed Apps Script URL
+        const API_URL = "https://script.google.com/macros/s/AKfycbz1lXmBeqLMVz2U8ru6oSfwmX_rU4cPYY5xYdRQxU30GAXXhNEp-yDBC7GD54gVyOrZ/exec";
+        // Google Sheet ID where your data is stored
+        // IMPORTANT: Replace this with your actual Google Sheet ID
+        const SHEET_ID = "1DKqRzibMoHhBb7jDpSxXcPV9uKrBwdl5P84aHR-MUT0";
+        // Google Drive Folder ID for uploads
+        // IMPORTANT: Replace this with your actual Google Drive Folder ID
+        const GOOGLE_DRIVE_FOLDER_ID = "13qIPS_xmGKRp9Eb2ig5h7LXJv_bTP5HG"; // Provided by user
+
+        // Global variables to store fetched data and current filter/sort states
+        let budgetRequestData = []; // Original data from "รายการขอใช้งบประมาณ"
+        let filteredBudgetRequestData = []; // Filtered data for "รายการขอใช้งบประมาณ" page (before pagination)
+        let allRemainingBudgetData = []; // Data from "เงินคงเหลือ" (used by dashboard and Remaining Budget page)
+        let departments = []; // For "รายการขอใช้งบประมาณ" filter
+        let currentDepartmentFilter = "all"; // For "รายการขอใช้งบประมาณ" filter
+        let currentResponsiblePersonFilter = ""; // For "รายการขอใช้งบประมาณ" filter (new)
+        let currentDashboardDepartmentFilter = "all"; // For dashboard department filter
+        
+        // Pagination variables for "รายการขอใช้งบประมาณ"
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        // Variables for file upload context
+        let currentUploadDocId = null;
+        let currentUploadResponsible = null; // New global variable for responsible person
+
+        // Admin passwords
+        // IMPORTANT: In a real application, these should NOT be hardcoded in the frontend.
+        // Use a secure authentication system.
+        const DEPUTY_DIRECTOR_PASSWORD = "admin123";
+        const DIRECTOR_PASSWORD = "admin999";
+
+        /**
+         * Function to show a specific page and update the active tab styling.
+         * @param {string} pageIdToShow - The ID of the div element representing the page to show.
+         * @param {string} tabIdToActivate - The ID of the button element representing the tab to activate.
+         */
+        function showPage(pageIdToShow, tabIdToActivate) {
+            // List all page IDs in the application
+            const allPageIds = ['dashboard-page', 'budget-request-page', 'remaining-budget-page', 'activity-summary-page', 'admin-page'];
+            // List all navigation tab button IDs
+            const allTabIds = ['nav-dashboard', 'nav-budget-request', 'nav-remaining-budget', 'nav-activity-summary', 'nav-admin'];
+
+            // Hide all content pages
+            allPageIds.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+
+            // Show the requested page by removing the 'hidden' class
+            document.getElementById(pageIdToShow).classList.remove('hidden');
+
+            // Remove 'active-tab' class from all navigation buttons
+            allTabIds.forEach(id => {
+                document.getElementById(id).classList.remove('active-tab');
+            });
+
+            // Add 'active-tab' class to the currently selected tab, if specified
+            if (tabIdToActivate) {
+                document.getElementById(tabIdToActivate).classList.add('active-tab');
+            }
+        }
+
+        /**
+         * Shows the dashboard page and populates it with summary data.
+         * It primarily fetches data from 'เงินคงเหลือ'.
+         */
+        function showDashboard() {
+            showPage('dashboard-page', 'nav-dashboard');
+            
+            // Show loading indicator and hide content
+            document.getElementById('dashboard-loading').classList.remove('hidden');
+            document.getElementById('dashboard-content').classList.add('hidden');
+            document.getElementById('dashboard-error').classList.add('hidden');
+            document.getElementById('dashboard-filters').classList.add('hidden'); // Hide filters during loading
+
+            // Fetch remaining budget data (for overall summary and filtering by department)
+            fetchRemainingBudgetDataForDashboard().then(() => {
+                // After data is fetched, render the dashboard summary based on the current filter
+                renderDashboardSummary();
+                document.getElementById('dashboard-loading').classList.add('hidden');
+                document.getElementById('dashboard-content').classList.remove('hidden');
+                document.getElementById('dashboard-filters').classList.remove('hidden'); // Show filters after data loads
+            }).catch(error => {
+                console.error("Error loading dashboard data:", error);
+                document.getElementById('dashboard-loading').classList.add('hidden');
+                document.getElementById('dashboard-error').classList.remove('hidden');
+                document.getElementById('dashboard-error').innerHTML = `
+                    <p><strong>ข้อผิดพลาด:</strong> ไม่สามารถโหลดข้อมูลแดชบอร์ดได้: ${error.message}</p>
+                    <p>โปรดตรวจสอบการเชื่อมต่อและลองอีกครั้ง</p>
+                `;
+            });
+        }
+
+        /**
+         * Fetches all remaining budget data for dashboard summary from the Google Apps Script API.
+         * @returns {Promise<void>} A promise that resolves when data is fetched.
+         */
+        function fetchRemainingBudgetDataForDashboard() {
+            return fetch(`${API_URL}?action=getAllRemainingBudgetData&sheetId=${SHEET_ID}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        allRemainingBudgetData = data.data || [];
+                    } else {
+                        throw new Error(data.message || 'ไม่สามารถดึงข้อมูลเงินคงเหลือสำหรับแดชบอร์ดได้');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching remaining budget data for dashboard:', error);
+                    allRemainingBudgetData = []; // Clear data on error
+                    throw error; // Re-throw to propagate to showDashboard's catch block
+                });
+        }
+        
+        /**
+         * Applies the selected department filter to dashboard data and re-renders the summary.
+         */
+        function filterDashboardData() {
+            currentDashboardDepartmentFilter = document.getElementById('dashboard-department-filter').value;
+            renderDashboardSummary();
+            updateDashboardActiveFilters();
+        }
+
+        /**
+         * Updates the display of active filter badges on the dashboard.
+         */
+        function updateDashboardActiveFilters() {
+            const activeFiltersContainer = document.getElementById('dashboard-active-filters');
+            activeFiltersContainer.innerHTML = '';
+            
+            if (currentDashboardDepartmentFilter !== 'all') {
+                const filterBadge = document.createElement('div');
+                filterBadge.className = 'filter-badge';
+                filterBadge.innerHTML = `
+                    <span>กลุ่มงาน: ${currentDashboardDepartmentFilter}</span>
+                    <span class="close-icon" onclick="clearDashboardDepartmentFilter()">✕</span>
+                `;
+                activeFiltersContainer.appendChild(filterBadge);
+            }
+        }
+
+        /**
+         * Clears the dashboard department filter and re-filters the data.
+         */
+        function clearDashboardDepartmentFilter() {
+            document.getElementById('dashboard-department-filter').value = 'all';
+            currentDashboardDepartmentFilter = 'all';
+            filterDashboardData();
+        }
+
+        /**
+         * Renders the summary data on the dashboard page based on selected filter from 'เงินคงเหลือ' sheet.
+         */
+        function renderDashboardSummary() {
+            const cardTitle1 = document.getElementById('card-title-1');
+            const cardValue1 = document.getElementById('card-value-1');
+            const cardTitle2 = document.getElementById('card-title-2');
+            const cardValue2 = document.getElementById('card-value-2');
+            const cardTitle3 = document.getElementById('card-title-3');
+            const cardValue3 = document.getElementById('card-value-3');
+            const progressBarTitle = document.getElementById('progress-bar-title');
+            const progressBarDescription = document.getElementById('progress-bar-description');
+            const progressBar = document.getElementById('budget-progress-bar');
+
+            // Clear previous values
+            cardValue1.textContent = '0.00 ฿';
+            cardValue2.textContent = '0.00 ฿';
+            cardValue3.textContent = '0.00 ฿';
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            
+            // Set static titles and descriptions based on 'เงินคงเหลือ' data source
+            cardTitle1.textContent = 'งบประมาณจัดสรรทั้งหมด';
+            cardTitle2.textContent = 'งบประมาณที่ใช้ไป';
+            cardTitle3.textContent = 'งบประมาณคงเหลือ';
+            progressBarTitle.textContent = 'ความก้าวหน้าการใช้งบประมาณ';
+            progressBarDescription.textContent = 'แสดงเปอร์เซ็นต์ของงบประมาณที่ใช้ไปเทียบกับงบประมาณที่จัดสรร';
+
+            let dataToProcess = [...allRemainingBudgetData];
+
+            // Apply filter if a specific department is selected
+            if (currentDashboardDepartmentFilter !== 'all') {
+                dataToProcess = dataToProcess.filter(item => item.กลุ่มงาน === currentDashboardDepartmentFilter);
+            }
+
+            if (!dataToProcess || dataToProcess.length === 0) {
+                // If no data after filtering, set all values to zero and return
+                return;
+            }
+
+            let totalAllocatedAmount = 0;
+            let totalUsedAmount = 0;
+            let totalRemainingAmount = 0;
+
+            dataToProcess.forEach(item => {
+                totalAllocatedAmount += parseFloat(item.เงินจัดสรร || 0);
+                totalUsedAmount += parseFloat(item.ใช้ไป || 0);
+                totalRemainingAmount += parseFloat(item.เงินคงเหลือ || 0);
+            });
+
+            const progressPercentage = totalAllocatedAmount > 0 ? (totalUsedAmount / totalAllocatedAmount) * 100 : 0;
+
+            cardValue1.textContent = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 2 }).format(totalAllocatedAmount);
+            cardValue2.textContent = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 2 }).format(totalUsedAmount);
+            cardValue3.textContent = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 2 }).format(totalRemainingAmount);
+            
+            progressBar.style.width = `${progressPercentage.toFixed(2)}%`;
+            progressBar.textContent = `${progressPercentage.toFixed(0)}%`;
+            
+            updateDashboardActiveFilters(); // Update filter badge
+        }
+
+
+        /**
+         * Shows the budget request page and fetches its data.
+         */
+        function showBudgetRequest() {
+            showPage('budget-request-page', 'nav-budget-request');
+            // Reset pagination to first page when showing this page
+            currentPage = 1;
+            // Ensure data is fetched only when the budget request page is shown
+            fetchBudgetRequestData(); // This fetches from "รายการขอใช้งบประมาณ"
+        }
+
+        /**
+         * Fetches budget request data from the Google Apps Script API (for 'รายการขอใช้งบประมาณ' sheet).
+         * @returns {Promise<void>} A promise that resolves when data is fetched.
+         */
+        function fetchBudgetRequestData() {
+            // Clear any previous error messages
+            document.getElementById('budget-request-error').classList.add('hidden');
+            document.getElementById('budget-request-error').innerHTML = '';
+            
+            // Show loading indicator for budget request page if it's visible
+            if (!document.getElementById('budget-request-page').classList.contains('hidden')) {
+                 document.getElementById('budget-request-loading').classList.remove('hidden');
+            }
+           
+            return fetch(`${API_URL}?action=getBudgetRequests&sheetId=${SHEET_ID}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        budgetRequestData = data.data || [];
+                        // Extract unique departments for the filter dropdown
+                        extractDepartments(); 
+                        filterBudgetRequestData(); // Apply filters and pagination
+                    } else {
+                        throw new Error(data.message || 'ไม่สามารถดึงข้อมูลได้');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching budget request data:', error);
+                    showBudgetRequestError('ไม่สามารถเชื่อมต่อกับ API ได้: ' + error.message);
+                    budgetRequestData = []; // Clear data on error
+                    filterBudgetRequestData(); // Update display to show no data
+                })
+                .finally(() => {
+                    if (!document.getElementById('budget-request-page').classList.contains('hidden')) {
+                        document.getElementById('budget-request-loading').classList.add('hidden');
+                    }
+                });
+        }
+        
+        /**
+         * Extracts unique department names from the fetched budget request data
+         * and populates the department filter dropdown.
+         */
+        function extractDepartments() {
+            if (!budgetRequestData || !Array.isArray(budgetRequestData)) return;
+            
+            // Get unique department names, filter out empty/whitespace values, and sort them
+            const uniqueDepartments = [...new Set(budgetRequestData
+                .map(item => item.กลุ่มงาน)
+                .filter(dept => dept && dept.trim() !== '')
+            )].sort();
+            
+            departments = uniqueDepartments; // Store unique departments
+            
+            // Populate the department filter dropdown
+            const departmentFilter = document.getElementById('department-filter');
+            // Store the currently selected value before clearing options
+            const currentSelectedDept = departmentFilter.value; 
+
+            departmentFilter.innerHTML = '<option value="all">ทั้งหมด</option>'; // Add "All" option
+            
+            uniqueDepartments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept;
+                option.textContent = dept;
+                departmentFilter.appendChild(option);
+            });
+
+            // Restore the selected value if it still exists in the new options
+            if (departments.includes(currentSelectedDept)) {
+                departmentFilter.value = currentSelectedDept;
+            } else {
+                departmentFilter.value = 'all'; // Default to 'all' if the previous selection is no longer valid
+                currentDepartmentFilter = 'all'; // Update the global filter as well
+            }
+        }
+
+        /**
+         * Filters the budget request data based on selected criteria
+         * and then displays it in the table with pagination.
+         */
+        function filterBudgetRequestData() {
+            // Start with all budget request data
+            let tempFilteredData = [...budgetRequestData]; 
+            
+            // Get filter values
+            currentDepartmentFilter = document.getElementById('department-filter').value;
+            currentResponsiblePersonFilter = document.getElementById('responsible-person-filter').value.trim().toLowerCase();
+
+            // Apply department filter
+            if (currentDepartmentFilter !== 'all') {
+                tempFilteredData = tempFilteredData.filter(item => item.กลุ่มงาน === currentDepartmentFilter);
+            }
+            
+            // Apply responsible person filter
+            if (currentResponsiblePersonFilter) {
+                tempFilteredData = tempFilteredData.filter(item => 
+                    String(item.ผู้รับผิดชอบ || '').toLowerCase().includes(currentResponsiblePersonFilter)
+                );
+            }
+            
+            // Sort by "รหัสเอกสาร" (Document ID) in descending order (highest first)
+            try {
+                const getNumericPart = (id) => {
+                    if (!id) return 0;
+                    // Extract numeric part from document ID (e.g., "DOC-123" -> 123)
+                    const matches = id.toString().match(/\d+/g);
+                    if (matches && matches.length > 0) {
+                        return parseInt(matches[matches.length - 1], 10);
+                    }
+                    return 0; // Default to 0 if no numeric part found for comparison
+                };
+
+                tempFilteredData.sort((a, b) => {
+                    const numA = getNumericPart(a.รหัสเอกสาร);
+                    const numB = getNumericPart(b.รหัสเอกสาร);
+                    
+                    // Prioritize numeric comparison
+                    if (!isNaN(numA) && !isNaN(numB)) {
+                        return numB - numA; // Descending numeric order
+                    }
+                    
+                    // Fallback to string comparison if not purely numeric
+                    const idA = a.รหัสเอกสาร || '';
+                    const idB = b.รหัสเอกสาร || '';
+                    return idB.localeCompare(idA); // Descending string order
+                });
+            } catch (error) {
+                console.warn('Could not sort budget request data:', error); // Log a warning if sorting fails
+            }
+
+            // Update the global filtered data array
+            filteredBudgetRequestData = tempFilteredData;
+
+            // Reset to first page after filtering/sorting
+            currentPage = 1;
+            
+            // Display the filtered and paginated data
+            displayBudgetRequestData(filteredBudgetRequestData);
+            updatePaginationControls();
+            updateActiveFilters(); // Update the filter badges
+        }
+        
+        /**
+         * Updates the display of active filter badges.
+         */
+        function updateActiveFilters() {
+            const activeFiltersContainer = document.getElementById('active-filters');
+            activeFiltersContainer.innerHTML = ''; // Clear existing badges
+            
+            // Add a badge for the department filter if it's not "all"
+            if (currentDepartmentFilter !== 'all') {
+                const filterBadge = document.createElement('div');
+                filterBadge.className = 'filter-badge';
+                filterBadge.innerHTML = `
+                    <span>กลุ่มงาน: ${currentDepartmentFilter}</span>
+                    <span class="close-icon" onclick="clearDepartmentFilter()">✕</span>
+                `;
+                activeFiltersContainer.appendChild(filterBadge);
+            }
+
+            // Add a badge for the responsible person filter if it's not empty
+            if (currentResponsiblePersonFilter) {
+                const filterBadge = document.createElement('div');
+                filterBadge.className = 'filter-badge';
+                filterBadge.innerHTML = `
+                    <span>ผู้รับผิดชอบ: ${currentResponsiblePersonFilter}</span>
+                    <span class="close-icon" onclick="clearResponsiblePersonFilter()">✕</span>
+                `;
+                activeFiltersContainer.appendChild(filterBadge);
+            }
+        }
+
+        /**
+         * Clears the department filter and re-filters the data.
+         */
+        function clearDepartmentFilter() {
+            document.getElementById('department-filter').value = 'all'; // Reset dropdown
+            currentDepartmentFilter = 'all'; // Reset global state
+            filterBudgetRequestData(); // Re-filter data
+        }
+
+        /**
+         * Clears the responsible person filter and re-filters the data.
+         */
+        function clearResponsiblePersonFilter() {
+            document.getElementById('responsible-person-filter').value = ''; // Clear input
+            currentResponsiblePersonFilter = ''; // Reset global state
+            filterBudgetRequestData(); // Re-filter data
+        }
+
+        /**
+         * Displays an error message in the budget request section.
+         * @param {string} message - The error message to display.
+         */
+        function showBudgetRequestError(message) {
+            const errorElement = document.getElementById('budget-request-error');
+            errorElement.innerHTML = `
+                <p><strong>ข้อผิดพลาด:</strong> ${message}</p>
+                <p>กรุณาลองใหม่อีกครั้ง หรือติดต่อผู้ดูแลระบบ</p>
+            `;
+            errorElement.classList.remove('hidden'); // Show the error message
+            
+            // Display a generic error message in the table body as well
+            document.getElementById('budget-request-data').innerHTML = 
+                `<tr><td colspan="10" class="text-center py-4 text-red-500">
+                    เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณาลองใหม่อีกครั้ง
+                </td></tr>`;
+        }
+
+        /**
+         * Populates the budget request table with the given data for the current page.
+         * @param {Array<Object>} data - The already filtered array of budget request objects.
+         */
+        function displayBudgetRequestData(data) {
+            const tableBody = document.getElementById('budget-request-data');
+            tableBody.innerHTML = ''; // Clear existing table rows
+            
+            // Calculate start and end index for the current page
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedData = data.slice(startIndex, endIndex);
+
+            // If no data (after filtering and pagination), display "No data found"
+            if (!paginatedData || paginatedData.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="10" class="text-center py-4">ไม่พบข้อมูล</td></tr>';
+                return;
+            }
+            
+            // Iterate over each item and create a table row
+            paginatedData.forEach(item => {
+                try {
+                    const row = document.createElement('tr');
+                    
+                    // Format the amount as Thai Baht currency
+                    let formattedAmount = '0.00 ฿';
+                    let rawAmount = 0;
+                    try {
+                        rawAmount = parseFloat(item.จำนวนเงิน || 0);
+                        formattedAmount = new Intl.NumberFormat('th-TH', {
+                            style: 'currency',
+                            currency: 'THB',
+                            minimumFractionDigits: 2
+                        }).format(rawAmount);
+                    } catch (e) {
+                        console.warn('Error formatting amount:', e);
+                    }
+                    
+                    // Determine approval status for Deputy Director and Director
+                    const isDeputyApproved = item["รองผอ.อนุมัติ"] === true || 
+                                             item["รองผอ.อนุมัติ"] === "true" || 
+                                             item["รองผอ.อนุมัติ"] === "TRUE" || 
+                                             item["รองผอ.อนุมัติ"] === "อนุมัติ";
+                    const isDirectorApproved = item["ผอ.อนุมัติ"] === true || 
+                                                item["ผอ.อนุมัติ"] === "true" || 
+                                                item["ผอ.อนุมัติ"] === "TRUE" || 
+                                                item["ผอ.อนุมัติ"] === "อนุมัติ";
+                    
+                    // Format Date field using "วันที่เข้าระบบ"
+                    let formattedDate = item.วันที่เข้าระบบ || '';
+                    if (typeof formattedDate === 'number') { // Check if it's a number (Excel date serial)
+                        // Convert Excel serial date to JavaScript Date object
+                        const excelEpoch = new Date(Date.UTC(1899, 11, 30)); // Excel's epoch is Dec 30, 1899
+                        const jsDate = new Date(excelEpoch.getTime() + (formattedDate - 1) * 24 * 60 * 60 * 1000); // Subtract 1 for Excel's 1900 leap year bug
+                        formattedDate = jsDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                    } else if (formattedDate instanceof Date) { // If it's already a Date object
+                        formattedDate = formattedDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                    } else if (typeof formattedDate === 'string' && formattedDate) {
+                        // Try to parse as date string if it's a string
+                        try {
+                            const dateObj = new Date(formattedDate);
+                            if (!isNaN(dateObj.getTime())) { // Check if valid date
+                                formattedDate = dateObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                            }
+                        } catch (e) {
+                            // Keep original string if parsing fails
+                        }
+                    }
+
+                    // Determine content for "เอกสารแนบ" column
+                    let attachmentContent;
+                    if (item.เอกสารแนบ && item.เอกสารแนบ.trim() !== '') {
+                        attachmentContent = `<a href="${item.เอกสารแนบ}" target="_blank" class="text-primary hover:underline">ดูเอกสาร</a>`;
+                    } else {
+                        // We don't allow file attachment from the general budget request page directly
+                        // It will be handled in the admin page
+                        attachmentContent = '-';
+                    }
+
+                    // Populate the row with data
+                    row.innerHTML = `
+                        <td>${formattedDate}</td>
+                        <td>${item.รหัสเอกสาร || ''}</td>
+                        <td>${item.กลุ่มงาน || ''}</td>
+                        <td>${item.กิจกรรม || ''}</td>
+                        <td>${item.รายละเอียด || ''}</td>
+                        <td data-amount="${rawAmount}">${formattedAmount}</td>
+                        <td>${item.ผู้รับผิดชอบ || ''}</td>
+                        <td class="text-center">${isDeputyApproved ? '✅' : '❌'}</td>
+                        <td class="text-center">${isDirectorApproved ? '✅' : '❌'}</td>
+                        <td>${attachmentContent}</td>
+                    `;
+                    
+                    tableBody.appendChild(row); // Add the row to the table body
+                } catch (error) {
+                    console.error('Error processing row:', error, item); // Log errors for individual rows
+                }
+            });
+        }
+
+        /**
+         * Initiates the file upload process by triggering the hidden file input.
+         * Stores the document ID and the original index of the item for later use.
+         * @param {string} docId - The document ID (รหัสเอกสาร) for the row.
+         * @param {number} originalIndex - The index of the item in the `filteredBudgetRequestData` array.
+         */
+        function initiateFileUpload(docId, originalIndex) {
+            currentUploadDocId = docId;
+            document.getElementById('file-upload-input').click();
+        }
+
+        /**
+         * Handles the file selection and uploads the file to Google Drive via Apps Script.
+         * This is called by the hidden file input's change event listener.
+         */
+        document.getElementById('file-upload-input').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                console.log("No file selected.");
+                return;
+            }
+
+            if (!currentUploadDocId || !currentUploadResponsible) {
+                // This might happen if the context was lost or not set up correctly.
+                // In the admin page, we directly use the docId.
+                showDirectorApprovalError("ไม่พบรหัสเอกสารหรือผู้รับผิดชอบสำหรับการแนบไฟล์ กรุณาลองใหม่อีกครั้ง");
+                return;
+            }
+
+            document.getElementById('director-loading').classList.remove('hidden'); // Show loading for director section
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Content = e.target.result.split(',')[1]; // Get base64 part
+                // Construct file name: document ID + responsible person + original file name
+                const fileName = `${currentUploadDocId}_${currentUploadResponsible}_${file.name}`; 
+                const mimeType = file.type;
+
+                const uploadPayload = {
+                    action: "uploadFileToDrive",
+                    sheetId: SHEET_ID,
+                    folderId: GOOGLE_DRIVE_FOLDER_ID,
+                    documentId: currentUploadDocId,
+                    fileContent: base64Content,
+                    fileName: fileName,
+                    mimeType: mimeType
+                };
+
+                fetch(API_URL, {
+                    method: 'POST', // Use POST for file uploads
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8', // Content-Type for Apps Script doPost parsing
+                    },
+                    body: JSON.stringify(payload) // Send as JSON string
+                })
+                .then(response => {
+                    return response.text().then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            throw new Error(`Invalid JSON response: ${text}`);
+                        }
+                    });
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        // After file upload, now approve by Director
+                        handleDirectorApprovalAfterFileUpload(currentUploadDocId, data.fileUrl);
+                        console.log(`Director approved ${docId}. File URL: ${data.fileUrl}`); // Log success with docId and fileUrl
+                    } else {
+                        throw new Error(data.message || 'การอัปโหลดไฟล์ไม่สำเร็จ');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error uploading file:', error);
+                    showDirectorApprovalError('เกิดข้อผิดพลาดในการอัปโหลดไฟล์: ' + error.message);
+                })
+                .finally(() => {
+                    document.getElementById('director-loading').classList.add('hidden'); // Hide loading
+                    // Reset hidden file input
+                    event.target.value = '';
+                    currentUploadDocId = null;
+                    currentUploadResponsible = null; // Clear responsible person
+                });
+            };
+            reader.readAsDataURL(file); // Read file as Base64 data URL
+        });
+
+
+        /**
+         * Updates the pagination controls (buttons and page numbers).
+         */
+        function updatePaginationControls() {
+            const totalPages = Math.ceil(filteredBudgetRequestData.length / itemsPerPage);
+            document.getElementById('current-page').textContent = currentPage;
+            document.getElementById('total-pages').textContent = totalPages;
+
+            document.getElementById('prev-page-btn').disabled = (currentPage === 1);
+            document.getElementById('next-page-btn').disabled = (currentPage === totalPages || totalPages === 0);
+        }
+
+        /**
+         * Navigates to the previous page.
+         */
+        function goToPreviousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayBudgetRequestData(filteredBudgetRequestData);
+                updatePaginationControls();
+            }
+        }
+
+        /**
+         * Navigates to the next page.
+         */
+        function goToNextPage() {
+            const totalPages = Math.ceil(filteredBudgetRequestData.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayBudgetRequestData(filteredBudgetRequestData);
+                updatePaginationControls();
+            }
+        }
+
+        /**
+         * Shows the remaining budget page, clears previous search, and fetches data.
+         * Also ensures budget request data is loaded for activity details.
+         */
+        function showRemainingBudget() {
+            showPage('remaining-budget-page', 'nav-remaining-budget');
+            // Clear the search input field and any previous error messages
+            document.getElementById('responsible-person').value = '';
+            document.getElementById('remaining-budget-error').classList.add('hidden');
+            // Reset the table content to a prompt for search
+            document.getElementById('remaining-budget-data').innerHTML = '<tr><td colspan="6" class="text-center py-4">กรุณาค้นหาผู้รับผิดชอบ</td></tr>';
+
+            // IMPORTANT: Ensure budget request data is loaded when navigating to Remaining Budget page.
+            // This is crucial for showActivityDetails to work immediately after a search.
+            fetchBudgetRequestData();
+        }
+
+        /**
+         * Searches for remaining budget data based on the responsible person's name.
+         */
+        function searchResponsiblePerson() {
+            const searchTerm = document.getElementById('responsible-person').value.trim();
+            const tableBody = document.getElementById('remaining-budget-data');
+            
+            // Clear previous results and errors
+            tableBody.innerHTML = '';
+            document.getElementById('remaining-budget-error').classList.add('hidden');
+            document.getElementById('remaining-budget-error').innerHTML = '';
+            
+            // If search term is empty, prompt the user to search
+            if (!searchTerm) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">กรุณาค้นหาผู้รับผิดชอบ</td></tr>';
+                return;
+            }
+            
+            // Show loading indicator
+            document.getElementById('remaining-budget-loading').classList.remove('hidden');
+            
+            // Fetch data from the API with encoded search term and sheet ID
+            fetch(`${API_URL}?action=searchRemainingBudget&responsible=${encodeURIComponent(searchTerm)}&sheetId=${SHEET_ID}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        displayRemainingBudgetData(data.data || []); // Display fetched data
+                    } else {
+                        throw new Error(data.message || 'ไม่สามารถค้นหาข้อมูลได้');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error searching for responsible person:', error);
+                    showRemainingBudgetError('ไม่สามารถเชื่อมต่อกับ API ได้: ' + error.message);
+                })
+                .finally(() => {
+                    document.getElementById('remaining-budget-loading').classList.add('hidden'); // Hide loading indicator
+                });
+        }
+
+        /**
+         * Displays an error message in the remaining budget section.
+         * @param {string} message - The error message to display.
+         */
+        function showRemainingBudgetError(message) {
+            const errorElement = document.getElementById('remaining-budget-error');
+            errorElement.innerHTML = `
+                <p><strong>ข้อผิดพลาด:</strong> ${message}</p>
+                <p>กรุณาลองใหม่อีกครั้ง หรือติดต่อผู้ดูแลระบบ</p>
+            `;
+            errorElement.classList.remove('hidden'); // Show the error message
+            
+            // Display a generic error message in the table body as well
+            document.getElementById('remaining-budget-data').innerHTML = 
+                `<tr><td colspan="6" class="text-center py-4 text-red-500">
+                    เกิดข้อผิดพลาดในการค้นหาข้อมูล กรุณาลองใหม่อีกครั้ง
+                </td></tr>`;
+        }
+
+        /**
+         * Populates the remaining budget table with the given data.
+         * @param {Array<Object>} data - An array of remaining budget objects.
+         */
+        function displayRemainingBudgetData(data) {
+            const tableBody = document.getElementById('remaining-budget-data');
+            tableBody.innerHTML = ''; // Clear existing table rows
+            
+            // Validate input data
+            if (!data || !Array.isArray(data)) {
+                showRemainingBudgetData('ข้อมูลที่ได้รับไม่ถูกต้อง');
+                return;
+            }
+            
+            // If no data, display "No data found"
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">ไม่พบข้อมูลที่ค้นหา</td></tr>';
+                return;
+            }
+            
+            // Sort data by "เงินคงเหลือ" (Remaining Budget) in descending order
+            let sortedData = [...data];
+            try {
+                sortedData.sort((a, b) => {
+                    const remainingA = parseFloat(a.เงินคงเหลือ || 0);
+                    const remainingB = parseFloat(b.เงินคงเหลือ || 0);
+                    return remainingB - remainingA; // Descending order (highest first)
+                });
+            } catch (error) {
+                console.warn('Could not sort remaining budget data:', error);
+            }
+            
+            // Iterate over each item and create a table row
+            sortedData.forEach(item => {
+                try {
+                    const row = document.createElement('tr');
+                    
+                    // Format currency values for "เงินจัดสรร", "ใช้ไป", and "เงินคงเหลือ"
+                    let formattedAllocated = '0.00 ฿';
+                    let formattedUsed = '0.00 ฿';
+                    let formattedRemaining = '0.00 ฿';
+                    let isPositiveRemaining = true; // Flag to check if remaining budget is positive
+                    
+                    try {
+                        const allocated = parseFloat(item.เงินจัดสรร || 0);
+                        formattedAllocated = new Intl.NumberFormat('th-TH', {
+                            style: 'currency',
+                            currency: 'THB',
+                            minimumFractionDigits: 2
+                        }).format(allocated);
+                        
+                        const used = parseFloat(item.ใช้ไป || 0); // Use 'ใช้ไป' from the item, not 'use'
+                        formattedUsed = new Intl.NumberFormat('th-TH', {
+                            style: 'currency',
+                            currency: 'THB',
+                            minimumFractionDigits: 2
+                        }).format(used);
+                        
+                        const remaining = parseFloat(item.เงินคงเหลือ || 0);
+                        formattedRemaining = new Intl.NumberFormat('th-TH', {
+                            style: 'currency',
+                            currency: 'THB',
+                            minimumFractionDigits: 2
+                        }).format(remaining);
+                        
+                        isPositiveRemaining = remaining > 0; // Check if remaining is positive
+                    } catch (e) {
+                        console.warn('Error formatting currency:', e);
+                    }
+                    
+                    // Determine CSS class for the "เงินคงเหลือ" cell
+                    const remainingBudgetClass = isPositiveRemaining ? 'budget-positive' : 'budget-negative';
+
+                    // Populate the row with data, applying conditional class for remaining budget
+                    // Make 'กิจกรรม' cell clickable
+                    row.innerHTML = `
+                        <td class="cursor-pointer text-primary hover:underline" onclick="showActivityDetails('${item.กิจกรรม}')">${item.กิจกรรม || ''}</td>
+                        <td>${item.ผู้รับผิดชอบ || ''}</td>
+                        <td>${item.แหล่งงบประมาณ || ''}</td>
+                        <td>${formattedAllocated}</td>
+                        <td>${formattedUsed}</td>
+                        <td class="${remainingBudgetClass}">${formattedRemaining}</td>
+                    `;
+                    
+                    tableBody.appendChild(row); // Add the row to the table body
+                } catch (error) {
+                    console.error('Error processing row:', error, item); // Log errors for individual rows
+                }
+            });
+        }
+
+        // Add event listener for Enter key on the responsible person search input
+        document.getElementById('responsible-person').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                searchResponsiblePerson(); // Trigger search when Enter is pressed
+            }
+        });
+
+        // Add event listener for Enter key on the responsible person filter input in Budget Request Page
+        document.getElementById('responsible-person-filter').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                filterBudgetRequestData(); // Trigger filter when Enter is pressed
+            }
+        });
+
+
+        // ===========================================
+        // Admin Page Specific Functions
+        // ===========================================
+
+        /**
+         * Shows the admin page and prompts for role selection.
+         */
+        function showAdminPage() {
+            showPage('admin-page', 'nav-admin');
+            document.getElementById('admin-role-selection').classList.remove('hidden');
+            document.getElementById('deputy-director-login-section').classList.add('hidden');
+            document.getElementById('director-login-section').classList.add('hidden');
+            document.getElementById('deputy-director-approval-section').classList.add('hidden');
+            document.getElementById('director-approval-section').classList.add('hidden');
+            document.getElementById('deputy-director-password-input').value = ''; // Clear password field
+            document.getElementById('director-password-input').value = ''; // Clear password field
+            document.getElementById('deputy-director-password-error').classList.add('hidden');
+            document.getElementById('director-password-error').classList.add('hidden');
+        }
+
+        /**
+         * Shows the login section for a specific admin role.
+         * @param {string} role - 'deputy' or 'director'.
+         */
+        function showLoginForRole(role) {
+            document.getElementById('admin-role-selection').classList.add('hidden');
+            document.getElementById('deputy-director-login-section').classList.add('hidden');
+            document.getElementById('director-login-section').classList.add('hidden');
+            document.getElementById('deputy-director-password-error').classList.add('hidden');
+            document.getElementById('director-password-error').classList.add('hidden');
+
+            if (role === 'deputy') {
+                document.getElementById('deputy-director-login-section').classList.remove('hidden');
+                document.getElementById('deputy-director-password-input').focus();
+            } else if (role === 'director') {
+                document.getElementById('director-login-section').classList.remove('hidden');
+                document.getElementById('director-password-input').focus();
+            }
+        }
+
+        /**
+         * Handles login for Deputy Director.
+         */
+        function loginDeputyDirector() {
+            const passwordInput = document.getElementById('deputy-director-password-input');
+            const passwordError = document.getElementById('deputy-director-password-error');
+            
+            if (passwordInput.value === DEPUTY_DIRECTOR_PASSWORD) {
+                passwordError.classList.add('hidden');
+                document.getElementById('deputy-director-login-section').classList.add('hidden');
+                document.getElementById('deputy-director-approval-section').classList.remove('hidden');
+                document.getElementById('director-approval-section').classList.add('hidden'); // Ensure director section is hidden
+                loadDeputyDirectorApprovalData();
+            } else {
+                passwordError.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Handles login for Director.
+         */
+        function loginDirector() {
+            const passwordInput = document.getElementById('director-password-input');
+            const passwordError = document.getElementById('director-password-error');
+            
+            if (passwordInput.value === DIRECTOR_PASSWORD) {
+                passwordError.classList.add('hidden');
+                document.getElementById('director-login-section').classList.add('hidden');
+                document.getElementById('director-approval-section').classList.remove('hidden');
+                document.getElementById('deputy-director-approval-section').classList.add('hidden'); // Ensure deputy section is hidden
+                loadDirectorApprovalData();
+            } else {
+                passwordError.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Fetches budget request data and displays items awaiting Deputy Director approval.
+         */
+        function loadDeputyDirectorApprovalData() {
+            const loadingElement = document.getElementById('deputy-director-loading');
+            const errorElement = document.getElementById('deputy-director-error');
+            const tableBody = document.getElementById('deputy-director-data');
+
+            loadingElement.classList.remove('hidden');
+            errorElement.classList.add('hidden');
+            tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">กำลังโหลดข้อมูล...</td></tr>';
+
+            fetch(`${API_URL}?action=getBudgetRequests&sheetId=${SHEET_ID}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        const pendingApproval = data.data.filter(item => {
+                            const isDeputyApproved = item["รองผอ.อนุมัติ"] === true || item["รองผอ.อนุมัติ"] === "true" || item["รองผอ.อนุมัติ"] === "TRUE" || item["รองผอ.อนุมัติ"] === "อนุมัติ";
+                            return !isDeputyApproved;
+                        });
+                        displayDeputyDirectorApprovalData(pendingApproval);
+                    } else {
+                        throw new Error(data.message || 'ไม่สามารถดึงข้อมูลรายการรออนุมัติจากรองผอ.ได้');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading Deputy Director approval data:', error);
+                    errorElement.classList.remove('hidden');
+                    errorElement.innerHTML = `<strong>ข้อผิดพลาด:</strong> ไม่สามารถโหลดข้อมูลได้: ${error.message}`;
+                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+                })
+                .finally(() => {
+                    loadingElement.classList.add('hidden');
+                });
+        }
+
+        /**
+         * Displays budget requests for Deputy Director approval.
+         * @param {Array<Object>} data - Array of budget request objects.
+         */
+        function displayDeputyDirectorApprovalData(data) {
+            const tableBody = document.getElementById('deputy-director-data');
+            tableBody.innerHTML = '';
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">ไม่พบกิจกรรมที่รอการอนุมัติจากรองผู้อำนวยการ</td></tr>';
+                return;
+            }
+
+            // Sort by "รหัสเอกสาร" (Document ID) in descending order (highest first)
+            data.sort((a, b) => {
+                const getNumericPart = (id) => {
+                    if (!id) return 0;
+                    const matches = id.toString().match(/\d+/g);
+                    return matches && matches.length > 0 ? parseInt(matches[matches.length - 1], 10) : 0;
+                };
+                const numA = getNumericPart(a.รหัสเอกสาร);
+                const numB = getNumericPart(b.รหัสเอกสาร);
+                return numB - numA;
+            });
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                let formattedAmount = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 2 }).format(parseFloat(item.จำนวนเงิน || 0));
+                
+                let formattedDate = item.วันที่เข้าระบบ || '';
+                if (typeof formattedDate === 'number') { 
+                    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+                    const jsDate = new Date(excelEpoch.getTime() + (formattedDate - 1) * 24 * 60 * 60 * 1000);
+                    formattedDate = jsDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                } else if (formattedDate instanceof Date) {
+                    formattedDate = formattedDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                } else if (typeof formattedDate === 'string' && formattedDate) {
+                    try {
+                        const dateObj = new Date(formattedDate);
+                        if (!isNaN(dateObj.getTime())) {
+                            formattedDate = dateObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                        }
+                    } catch (e) {}
+                }
+
+                row.innerHTML = `
+                    <td>${formattedDate}</td>
+                    <td>${item.รหัสเอกสาร || ''}</td>
+                    <td>${item.กลุ่มงาน || ''}</td>
+                    <td>${item.กิจกรรม || ''}</td>
+                    <td>${formattedAmount}</td>
+                    <td>${item.ผู้รับผิดชอบ || ''}</td>
+                    <td>
+                        <button onclick="approveDeputyDirector('${item.รหัสเอกสาร}')" class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-sm">
+                            อนุมัติ
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        /**
+         * Sends request to Apps Script to approve by Deputy Director.
+         * @param {string} docId - The document ID to approve.
+         */
+        function approveDeputyDirector(docId) {
+            document.getElementById('deputy-director-loading').classList.remove('hidden');
+            document.getElementById('deputy-director-error').classList.add('hidden');
+
+            const payload = {
+                action: "updateDeputyDirectorApproval",
+                sheetId: SHEET_ID,
+                documentId: docId
+            };
+
+            fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.text().then(text => JSON.parse(text)))
+            .then(data => {
+                if (data && data.success) {
+                    console.log(`Deputy Director approved ${docId}`);
+                    // Refresh all budget request data and then reload admin approval sections
+                    fetchBudgetRequestData().then(() => {
+                        loadDeputyDirectorApprovalData();
+                        loadDirectorApprovalData(); // Also refresh director's view
+                    });
+                } else {
+                    throw new Error(data.message || 'การอนุมัติไม่สำเร็จ');
+                }
+            })
+            .catch(error => {
+                console.error('Error approving by Deputy Director:', error);
+                document.getElementById('deputy-director-error').classList.remove('hidden');
+                document.getElementById('deputy-director-error').innerHTML = `<strong>ข้อผิดพลาด:</strong> ${error.message}`;
+            })
+            .finally(() => {
+                document.getElementById('deputy-director-loading').classList.add('hidden');
+            });
+        }
+
+        /**
+         * Fetches budget request data and displays items awaiting Director approval.
+         */
+        function loadDirectorApprovalData() {
+            const loadingElement = document.getElementById('director-loading');
+            const errorElement = document.getElementById('director-error');
+            const tableBody = document.getElementById('director-data');
+
+            loadingElement.classList.remove('hidden');
+            errorElement.classList.add('hidden');
+            tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">กำลังโหลดข้อมูล...</td></tr>';
+
+            fetch(`${API_URL}?action=getBudgetRequests&sheetId=${SHEET_ID}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        const pendingDirectorApproval = data.data.filter(item => {
+                            const isDeputyApproved = item["รองผอ.อนุมัติ"] === true || item["รองผอ.อนุมัติ"] === "true" || item["รองผอ.อนุมัติ"] === "TRUE" || item["รองผอ.อนุมัติ"] === "อนุมัติ";
+                            const isDirectorApproved = item["ผอ.อนุมัติ"] === true || item["ผอ.อนุมัติ"] === "true" || item["ผอ.อนุมัติ"] === "TRUE" || item["ผอ.อนุมัติ"] === "อนุมัติ";
+                            return isDeputyApproved && !isDirectorApproved;
+                        });
+                        displayDirectorApprovalData(pendingDirectorApproval);
+                    } else {
+                        throw new Error(data.message || 'ไม่สามารถดึงข้อมูลรายการรออนุมัติจากผอ.ได้');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading Director approval data:', error);
+                    errorElement.classList.remove('hidden');
+                    errorElement.innerHTML = `<strong>ข้อผิดพลาด:</strong> ไม่สามารถโหลดข้อมูลได้: ${error.message}`;
+                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+                })
+                .finally(() => {
+                    loadingElement.classList.add('hidden');
+                });
+        }
+
+        /**
+         * Displays budget requests for Director approval.
+         * @param {Array<Object>} data - Array of budget request objects.
+         */
+        function displayDirectorApprovalData(data) {
+            const tableBody = document.getElementById('director-data');
+            tableBody.innerHTML = '';
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">ไม่พบกิจกรรมที่รอการอนุมัติจากผู้อำนวยการ</td></tr>';
+                return;
+            }
+
+            // Sort by "รหัสเอกสาร" (Document ID) in descending order (highest first)
+            data.sort((a, b) => {
+                const getNumericPart = (id) => {
+                    if (!id) return 0;
+                    const matches = id.toString().match(/\d+/g);
+                    return matches && matches.length > 0 ? parseInt(matches[matches.length - 1], 10) : 0;
+                };
+                const numA = getNumericPart(a.รหัสเอกสาร);
+                const numB = getNumericPart(b.รหัสเอกสาร);
+                return numB - numA;
+            });
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                let formattedAmount = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 2 }).format(parseFloat(item.จำนวนเงิน || 0));
+                
+                let formattedDate = item.วันที่เข้าระบบ || '';
+                if (typeof formattedDate === 'number') { 
+                    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+                    const jsDate = new Date(excelEpoch.getTime() + (formattedDate - 1) * 24 * 60 * 60 * 1000);
+                    formattedDate = jsDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                } else if (formattedDate instanceof Date) {
+                    formattedDate = formattedDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                } else if (typeof formattedDate === 'string' && formattedDate) {
+                    try {
+                        const dateObj = new Date(formattedDate);
+                        if (!isNaN(dateObj.getTime())) {
+                            formattedDate = dateObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                        }
+                    } catch (e) {}
+                }
+
+                row.innerHTML = `
+                    <td>${formattedDate}</td>
+                    <td>${item.รหัสเอกสาร || ''}</td>
+                    <td>${item.กลุ่มงาน || ''}</td>
+                    <td>${item.กิจกรรม || ''}</td>
+                    <td>${formattedAmount}</td>
+                    <td>${item.ผู้รับผิดชอบ || ''}</td>
+                    <td>
+                        <button onclick="initiateDirectorApprovalWithUpload('${item.รหัสเอกสาร}', '${item.ผู้รับผิดชอบ}')" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-1 px-3 rounded text-sm">
+                            อนุมัติและแนบไฟล์
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        /**
+         * Initiates the Director approval process, potentially including file upload.
+         * @param {string} docId - The document ID to approve.
+         * @param {string} responsible - The name of the responsible person for the document.
+         */
+        function initiateDirectorApprovalWithUpload(docId, responsible) {
+            // Set context for file upload
+            currentUploadDocId = docId;
+            currentUploadResponsible = responsible;
+            // Trigger the hidden file input. The 'change' event listener will handle the file reading and upload.
+            document.getElementById('file-upload-input').click();
+            // The actual approval will happen in handleDirectorApprovalAfterFileUpload after file upload is done.
+        }
+
+        /**
+         * Handles the Director approval after a file has been successfully uploaded (or if no file is needed).
+         * This function is called by the file upload success callback or directly if no file is selected.
+         * @param {string} docId - The document ID to approve.
+         * @param {string} fileUrl - The URL of the uploaded file, or an empty string if no file was attached.
+         */
+        function handleDirectorApprovalAfterFileUpload(docId, fileUrl = '') {
+            document.getElementById('director-loading').classList.remove('hidden');
+            document.getElementById('director-error').classList.add('hidden');
+
+            const payload = {
+                action: "updateDirectorApproval",
+                sheetId: SHEET_ID,
+                documentId: docId,
+                fileUrl: fileUrl // Pass the file URL
+            };
+
+            fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.text().then(text => JSON.parse(text)))
+            .then(data => {
+                if (data && data.success) {
+                    console.log(`Director approved ${docId}. File URL: ${fileUrl}`);
+                    // Refresh all budget request data and then reload admin approval sections
+                    fetchBudgetRequestData().then(() => {
+                        loadDeputyDirectorApprovalData();
+                        loadDirectorApprovalData(); // Also refresh director's view
+                    });
+                } else {
+                    throw new Error(data.message || 'การอนุมัติโดยผู้อำนวยการไม่สำเร็จ');
+                }
+            })
+            .catch(error => {
+                console.error('Error approving by Director:', error);
+                document.getElementById('director-error').classList.remove('hidden');
+                document.getElementById('director-error').innerHTML = `<strong>ข้อผิดพลาด:</strong> ${error.message}`;
+            })
+            .finally(() => {
+                document.getElementById('director-loading').classList.add('hidden');
+            });
+        }
+
+
+        /**
+         * Displays an error message in the Director approval section.
+         * @param {string} message - The error message to display.
+         */
+        function showDirectorApprovalError(message) {
+            const errorElement = document.getElementById('director-error');
+            errorElement.innerHTML = `
+                <p><strong>ข้อผิดพลาด:</strong> ${message}</p>
+                <p>กรุณาลองใหม่อีกครั้ง หรือติดต่อผู้ดูแลระบบ</p>
+            `;
+            errorElement.classList.remove('hidden'); // Show the error message
+        }
+
+        /**
+         * Shows a modal with detailed budget requests for a specific activity.
+         * The 'responsible' parameter is no longer used for filtering, but kept for function signature consistency if needed elsewhere.
+         * @param {string} activity - The activity name to filter by.
+         */
+        function showActivityDetails(activity) { // Removed 'responsible' from parameters
+            const modal = document.getElementById('activity-details-modal');
+            const modalTitle = document.getElementById('detail-activity-name');
+            const tableBody = document.getElementById('activity-details-data');
+
+            modalTitle.textContent = activity;
+            tableBody.innerHTML = ''; // Clear previous details
+
+            // Filter budgetRequestData to find all requests matching the activity
+            const relevantRequests = budgetRequestData.filter(request =>
+                request.กิจกรรม === activity
+            );
+
+            if (relevantRequests.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="10" class="text-center py-4">ไม่พบรายละเอียดการขอใช้งบประมาณสำหรับกิจกรรมนี้</td></tr>';
+            } else {
+                // Sort relevantRequests by "วันที่เข้าระบบ" in descending order (latest first)
+                relevantRequests.sort((a, b) => {
+                    let dateA = new Date(a.วันที่เข้าระบบ);
+                    let dateB = new Date(b.วันที่เข้าระบบ);
+
+                    // Handle Excel serial dates if necessary, same logic as in displayBudgetRequestData
+                    if (typeof a.วันที่เข้าระบบ === 'number') {
+                        const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+                        dateA = new Date(excelEpoch.getTime() + (a.วันที่เข้าระบบ - 1) * 24 * 60 * 60 * 1000);
+                    }
+                    if (typeof b.วันที่เข้าระระบบ === 'number') {
+                        const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+                        dateB = new Date(excelEpoch.getTime() + (b.วันที่เข้าระบบ - 1) * 24 * 60 * 60 * 1000);
+                    }
+                    
+                    return dateB.getTime() - dateA.getTime(); // Descending order
+                });
+
+                relevantRequests.forEach(item => {
+                    const row = document.createElement('tr');
+                    
+                    let formattedAmount = '0.00 ฿';
+                    try {
+                        formattedAmount = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 2 }).format(parseFloat(item.จำนวนเงิน || 0));
+                    } catch (e) {
+                        console.warn('Error formatting amount for detail:', e);
+                    }
+
+                    let formattedDate = item.วันที่เข้าระบบ || '';
+                    if (typeof formattedDate === 'number') {
+                        const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+                        const jsDate = new Date(excelEpoch.getTime() + (formattedDate - 1) * 24 * 60 * 60 * 1000);
+                        formattedDate = jsDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                    } else if (formattedDate instanceof Date) {
+                        formattedDate = formattedDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                    } else if (typeof formattedDate === 'string' && formattedDate) {
+                        try {
+                            const dateObj = new Date(formattedDate);
+                            if (!isNaN(dateObj.getTime())) {
+                                formattedDate = dateObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                            }
+                        } catch (e) {}
+                    }
+
+                    const isDeputyApproved = item["รองผอ.อนุมัติ"] === true || item["รองผอ.อนุมัติ"] === "true" || item["รองผอ.อนุมัติ"] === "TRUE" || item["รองผอ.อนุมัติ"] === "อนุมัติ";
+                    const isDirectorApproved = item["ผอ.อนุมัติ"] === true || item["ผอ.อนุมัติ"] === "true" || item["ผอ.อนุมัติ"] === "TRUE" || item["ผอ.อนุมัติ"] === "อนุมัติ";
+
+                    let attachmentContent;
+                    if (item.เอกสารแนบ && item.เอกสารแนบ.trim() !== '') {
+                        attachmentContent = `<a href="${item.เอกสารแนบ}" target="_blank" class="text-primary hover:underline">ดูเอกสาร</a>`;
+                    } else {
+                        attachmentContent = '-';
+                    }
+
+                    row.innerHTML = `
+                        <td>${formattedDate}</td>
+                        <td>${item.รหัสเอกสาร || ''}</td>
+                        <td>${item.กลุ่มงาน || ''}</td>
+                        <td>${item.กิจกรรม || ''}</td>
+                        <td>${item.รายละเอียด || ''}</td>
+                        <td>${formattedAmount}</td>
+                        <td>${item.ผู้รับผิดชอบ || ''}</td>
+                        <td class="text-center">${isDeputyApproved ? '✅' : '❌'}</td>
+                        <td class="text-center">${isDirectorApproved ? '✅' : '❌'}</td>
+                        <td>${attachmentContent}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            modal.classList.remove('hidden'); // Show the modal
+        }
+
+        /**
+         * Hides the activity details modal.
+         */
+        function hideActivityDetails() {
+            document.getElementById('activity-details-modal').classList.add('hidden');
+        }
+
+        /**
+         * Shows the activity summary page.
+         */
+        function showActivitySummary() {
+            showPage('activity-summary-page', 'nav-activity-summary');
+            // This page is currently a placeholder.
+            // Future enhancements could include fetching and displaying summary charts or reports.
+        }
+
+
+        // Initialize the application when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            showDashboard(); // Display the dashboard page initially
+        });
+    </script>
+</body>
+</html>
